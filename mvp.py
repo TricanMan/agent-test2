@@ -9,16 +9,18 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from dotenv import load_dotenv
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from dotenv import load_dotenv
-from openai import OpenAI
-from scipy.stats import pearsonr, spearmanr
+from typing import Any, Dict, List, Tuple
+from litellm import completion
+from scipy.stats import f_oneway
 
 
 REQUIRED_PRODUCT_COLUMNS = {"product_name", "description", "category"}
+
 REQUIRED_HUMAN_COLUMNS = {
     "product_id",
     "rater_id",
@@ -28,9 +30,23 @@ REQUIRED_HUMAN_COLUMNS = {
 }
 
 
+PROVIDER_ENV_VARS = {
+    "openai": "OPENAI_API_KEY",
+    "gemini": "GOOGLE_API_KEY",
+    "anthropic": "ANTHROPIC_API_KEY",
+}
+
+
+@dataclass
+class ModelSpec:
+    name: str
+    provider: str
+    model: str
+
+
 @dataclass
 class RunConfig:
-    llm_model: str
+    models: List[ModelSpec]
     judge_repeats: int
     dimensions: List[str]
     max_workers: int
@@ -86,8 +102,26 @@ def load_json(path: str) -> Any:
 
 def load_config(path: str) -> RunConfig:
     raw = load_json(path)
+
+    model_payloads = raw.get("models")
+    models: List[ModelSpec] = []
+    if isinstance(model_payloads, list) and model_payloads:
+        for item in model_payloads:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name", "")).strip()
+            provider = str(item.get("provider", "")).strip().lower()
+            model = str(item.get("model", "")).strip()
+            if name and provider and model:
+                models.append(ModelSpec(name=name, provider=provider, model=model))
+
+    # Backward compatibility with legacy single-model config.
+    if not models:
+        legacy_model = str(raw.get("llm_model", "gpt-4o")).strip()
+        models = [ModelSpec(name="openai_default", provider="openai", model=legacy_model)]
+
     return RunConfig(
-        llm_model=raw.get("llm_model", "gpt-4o"),
+        models=models,
         judge_repeats=int(raw.get("judge_repeats", 3)),
         dimensions=list(raw.get("dimensions", ["physical", "cognitive"])),
         max_workers=int(raw.get("max_workers", 8)),
@@ -145,8 +179,8 @@ def parse_score_reason(payload: Dict[str, Any]) -> Tuple[int, str]:
         score = int(score)
     if not isinstance(score, int):
         raise ValueError("Score is not an integer")
-    if score < 1 or score > 5:
-        raise ValueError("Score must be between 1 and 5")
+    if score < 1 or score > 7:
+        raise ValueError("Score must be between 1 and 7")
 
     reason = payload.get("reason", "")
     if not isinstance(reason, str):
@@ -165,14 +199,33 @@ def build_prompt(template: str, row: pd.Series, dimension: str) -> str:
     )
 
 
+def normalize_message_content(content: Any) -> str:
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        chunks: List[str] = []
+        for block in content:
+            if isinstance(block, dict) and block.get("type") == "text":
+                chunks.append(str(block.get("text", "")))
+            else:
+                chunks.append(str(block))
+        return "\n".join([c for c in chunks if c]).strip()
+    return str(content or "")
+
+
 def call_llm(
-    client: OpenAI,
-    model: str,
+    model_spec: ModelSpec,
     prompt: str,
     timeout: int,
 ) -> Tuple[str, Dict[str, int]]:
-    response = client.chat.completions.create(
-        model=model,
+    litellm_model = (
+        model_spec.model
+        if model_spec.model.startswith(f"{model_spec.provider}/")
+        else f"{model_spec.provider}/{model_spec.model}"
+    )
+
+    response = completion(
+        model=litellm_model,
         messages=[
             {
                 "role": "user",
@@ -181,20 +234,40 @@ def call_llm(
         ],
         temperature=0,
         timeout=timeout,
+        drop_params=True,
     )
 
-    content = response.choices[0].message.content or ""
-    usage = response.usage
+    message_content = response.choices[0].message.content
+    content = normalize_message_content(message_content)
+    usage = getattr(response, "usage", None)
     usage_payload = {
         "prompt_tokens": int(getattr(usage, "prompt_tokens", 0) or 0),
         "completion_tokens": int(getattr(usage, "completion_tokens", 0) or 0),
     }
     return content, usage_payload
 
+def get_available_models(cfg: RunConfig, logger: RunLogger) -> List[ModelSpec]:
+    available: List[ModelSpec] = []
+    for model_spec in cfg.models:
+        required_var = PROVIDER_ENV_VARS.get(model_spec.provider)
+        if required_var and not os.environ.get(required_var):
+            logger.add_warning(
+                {
+                    "type": "missing_provider_api_key",
+                    "model_name": model_spec.name,
+                    "provider": model_spec.provider,
+                    "model": model_spec.model,
+                    "required_env_var": required_var,
+                    "message": f"Skipped model because {required_var} is not set.",
+                }
+            )
+            continue
+        available.append(model_spec)
+    return available
 
 def run_single_judgment(
     *,
-    client: OpenAI,
+    model_spec: ModelSpec,
     cfg: RunConfig,
     prompt_name: str,
     template: str,
@@ -209,11 +282,14 @@ def run_single_judgment(
     last_error = None
     for attempt in range(1, cfg.retry_attempts + 1):
         try:
-            raw_text, usage = call_llm(client, cfg.llm_model, rendered, cfg.request_timeout)
+            raw_text, usage = call_llm(model_spec, rendered, cfg.request_timeout)
             parsed = extract_json_block(raw_text)
             score, reason = parse_score_reason(parsed)
             logger.add_usage(usage["prompt_tokens"], usage["completion_tokens"])
             return {
+                "model_name": model_spec.name,
+                "provider": model_spec.provider,
+                "model_id": model_spec.model,
                 "prompt_name": prompt_name,
                 "product_id": product_id,
                 "dimension": dimension,
@@ -231,6 +307,9 @@ def run_single_judgment(
     logger.add_error(
         {
             "type": "llm_call_failed",
+            "model_name": model_spec.name,
+            "provider": model_spec.provider,
+            "model": model_spec.model,
             "prompt_name": prompt_name,
             "product_id": product_id,
             "dimension": dimension,
@@ -239,6 +318,9 @@ def run_single_judgment(
         }
     )
     return {
+        "model_name": model_spec.name,
+        "provider": model_spec.provider,
+        "model_id": model_spec.model,
         "prompt_name": prompt_name,
         "product_id": product_id,
         "dimension": dimension,
@@ -256,13 +338,15 @@ def run_prompt_runner(
     cfg: RunConfig,
     logger: RunLogger,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        raise EnvironmentError("OPENAI_API_KEY is not set")
+    active_models = get_available_models(cfg, logger)
+    if not active_models:
+        required_vars = sorted(set(PROVIDER_ENV_VARS.values()))
+        raise EnvironmentError(
+            "No configured models are runnable. Set at least one provider API key: "
+            + ", ".join(required_vars)
+        )
 
-    client = OpenAI(api_key=api_key)
-
-    tasks: List[Tuple[str, str, pd.Series, str, int]] = []
+    tasks: List[Tuple[ModelSpec, str, str, pd.Series, str, int]] = []
     for prompt in prompts:
         prompt_name = prompt.get("name")
         template = prompt.get("template")
@@ -276,23 +360,24 @@ def run_prompt_runner(
             )
             continue
 
-        for _, row in products_df.iterrows():
-            for dimension in cfg.dimensions:
-                for repeat_idx in range(1, cfg.judge_repeats + 1):
-                    tasks.append((prompt_name, template, row, dimension, repeat_idx))
+        for model_spec in active_models:
+            for _, row in products_df.iterrows():
+                for dimension in cfg.dimensions:
+                    for repeat_idx in range(1, cfg.judge_repeats + 1):
+                        tasks.append((model_spec, prompt_name, template, row, dimension, repeat_idx))
 
     raw_rows: List[Dict[str, Any]] = []
     with ThreadPoolExecutor(max_workers=cfg.max_workers) as pool:
         futures = [
             pool.submit(
                 run_single_judgment,
-                client=client,
+                model_spec=t[0],
                 cfg=cfg,
-                prompt_name=t[0],
-                template=t[1],
-                product_row=t[2],
-                dimension=t[3],
-                repeat_idx=t[4],
+                prompt_name=t[1],
+                template=t[2],
+                product_row=t[3],
+                dimension=t[4],
+                repeat_idx=t[5],
                 logger=logger,
             )
             for t in tasks
@@ -304,15 +389,32 @@ def run_prompt_runner(
 
     valid_df = raw_df.dropna(subset=["score"]).copy()
     if valid_df.empty:
-        return pd.DataFrame(columns=["prompt_name", "product_id", "dimension", "llm_score", "reason"]), raw_df
+        return (
+            pd.DataFrame(
+                columns=[
+                    "model_name",
+                    "provider",
+                    "model_id",
+                    "prompt_name",
+                    "product_id",
+                    "dimension",
+                    "llm_score",
+                    "reason",
+                ]
+            ),
+            raw_df,
+        )
 
     grouped = (
-        valid_df.groupby(["prompt_name", "product_id", "dimension"], as_index=False)
+        valid_df.groupby(
+            ["model_name", "provider", "model_id", "prompt_name", "product_id", "dimension"],
+            as_index=False,
+        )
         .agg(
             llm_score=("score", "mean"),
             reason=("reason", lambda s: " | ".join([v for v in s.head(3) if v])),
         )
-        .sort_values(["prompt_name", "product_id", "dimension"])
+        .sort_values(["model_name", "prompt_name", "product_id", "dimension"])
     )
 
     return grouped, raw_df
@@ -362,101 +464,52 @@ def compute_metrics(
     human_df: pd.DataFrame,
     cfg: RunConfig,
 ) -> pd.DataFrame:
-    human_long = pd.concat(
-        [
-            human_df[["product_id", "rater_id", "physical_score"]]
-            .rename(columns={"physical_score": "score"})
-            .assign(dimension="physical"),
-            human_df[["product_id", "rater_id", "cognitive_score"]]
-            .rename(columns={"cognitive_score": "score"})
-            .assign(dimension="cognitive"),
-        ],
-        ignore_index=True,
-    )
-
-    human_long["score"] = pd.to_numeric(human_long["score"], errors="coerce")
-    human_long = human_long.dropna(subset=["score"])
-
-    human_avg = (
-        human_long.groupby(["product_id", "dimension"], as_index=False)
-        .agg(human_avg_score=("score", "mean"))
-        .sort_values(["product_id", "dimension"])
-    )
-
-    # Human-only kappa per dimension.
-    categories = [1, 2, 3, 4, 5]
-    human_kappa: Dict[str, float] = {}
-    for dim in cfg.dimensions:
-        dim_human = human_long[human_long["dimension"] == dim][["product_id", "score"]]
-        counts = make_count_matrix(dim_human, "product_id", "score", categories)
-        human_kappa[dim] = generalized_fleiss_kappa(counts)
+    # Preserved for backward-compatible function signature.
+    _ = llm_raw_df
+    _ = human_df
 
     results: List[Dict[str, Any]] = []
 
-    for prompt_name, prompt_llm in llm_agg_df.groupby("prompt_name"):
+    for prompt_name, prompt_df in llm_agg_df.groupby("prompt_name"):
         prompt_metrics: Dict[str, Any] = {"prompt_name": prompt_name}
-        corr_values = []
+        p_values: List[float] = []
+        f_values: List[float] = []
 
         for dim in cfg.dimensions:
-            dim_llm = prompt_llm[prompt_llm["dimension"] == dim][
-                ["product_id", "llm_score", "reason"]
-            ]
-            dim_human_avg = human_avg[human_avg["dimension"] == dim][
-                ["product_id", "human_avg_score"]
-            ]
-            merged = dim_llm.merge(dim_human_avg, on="product_id", how="inner")
+            dim_df = prompt_df[prompt_df["dimension"] == dim][
+                ["model_name", "product_id", "llm_score"]
+            ].copy()
+            dim_df["llm_score"] = pd.to_numeric(dim_df["llm_score"], errors="coerce")
+            dim_df = dim_df.dropna(subset=["llm_score"])
 
-            if len(merged) >= 2:
-                pearson_val = float(pearsonr(merged["llm_score"], merged["human_avg_score"])[0])
-                spearman_val = float(spearmanr(merged["llm_score"], merged["human_avg_score"])[0])
+            group_scores: List[List[float]] = []
+            for _, model_scores in dim_df.groupby("model_name"):
+                values = model_scores["llm_score"].tolist()
+                if len(values) >= 2:
+                    group_scores.append(values)
+
+            prompt_metrics[f"model_groups_{dim}"] = int(len(group_scores))
+            prompt_metrics[f"n_obs_{dim}"] = int(len(dim_df))
+
+            if len(group_scores) >= 2:
+                f_stat, p_val = f_oneway(*group_scores)
+                f_stat = float(f_stat)
+                p_val = float(p_val)
             else:
-                pearson_val = math.nan
-                spearman_val = math.nan
+                f_stat = math.nan
+                p_val = math.nan
 
-            accuracy = (
-                ((merged["llm_score"] - merged["human_avg_score"]).abs() <= 1).mean()
-                if not merged.empty
-                else math.nan
-            )
+            prompt_metrics[f"anova_f_{dim}"] = f_stat
+            prompt_metrics[f"anova_p_{dim}"] = p_val
 
-            prompt_metrics[f"corr_{dim}"] = pearson_val
-            prompt_metrics[f"spearman_{dim}"] = spearman_val
-            prompt_metrics[f"accuracy_{dim}"] = float(accuracy) if not math.isnan(accuracy) else math.nan
-            prompt_metrics[f"kappa_human_{dim}"] = human_kappa.get(dim, math.nan)
+            if not math.isnan(p_val):
+                p_values.append(p_val)
+            if not math.isnan(f_stat):
+                f_values.append(f_stat)
 
-            if not math.isnan(pearson_val):
-                corr_values.append(pearson_val)
-
-            # Build human + LLM-raters matrix for llm-human kappa.
-            llm_dim_raw = llm_raw_df[
-                (llm_raw_df["prompt_name"] == prompt_name)
-                & (llm_raw_df["dimension"] == dim)
-                & (llm_raw_df["score"].notna())
-            ][["product_id", "score"]].copy()
-            llm_dim_raw["score"] = pd.to_numeric(llm_dim_raw["score"], errors="coerce")
-
-            human_dim = human_long[human_long["dimension"] == dim][["product_id", "score"]]
-            combined = pd.concat([human_dim, llm_dim_raw], ignore_index=True)
-            llm_human_counts = make_count_matrix(combined, "product_id", "score", categories)
-            prompt_metrics[f"kappa_llm_human_{dim}"] = generalized_fleiss_kappa(llm_human_counts)
-
-        prompt_metrics["avg_correlation"] = (
-            float(sum(corr_values) / len(corr_values)) if corr_values else math.nan
-        )
-
-        llm_human_kappas = [
-            prompt_metrics.get(f"kappa_llm_human_{dim}", math.nan) for dim in cfg.dimensions
-        ]
-        llm_human_kappas = [v for v in llm_human_kappas if not math.isnan(v)]
-        prompt_metrics["kappa"] = (
-            float(sum(llm_human_kappas) / len(llm_human_kappas)) if llm_human_kappas else math.nan
-        )
-
-        prompt_metrics["low_agreement_flag"] = (
-            prompt_metrics["avg_correlation"] < 0.4
-            if not math.isnan(prompt_metrics["avg_correlation"])
-            else True
-        )
+        prompt_metrics["min_anova_p"] = min(p_values) if p_values else math.nan
+        prompt_metrics["max_anova_f"] = max(f_values) if f_values else math.nan
+        prompt_metrics["significant_any_dim"] = any(p < 0.05 for p in p_values) if p_values else False
 
         results.append(prompt_metrics)
 
@@ -465,15 +518,17 @@ def compute_metrics(
         return pd.DataFrame(
             columns=[
                 "prompt_name",
-                "corr_physical",
-                "corr_cognitive",
-                "kappa",
-                "avg_correlation",
-                "low_agreement_flag",
+                "anova_f_physical",
+                "anova_p_physical",
+                "anova_f_cognitive",
+                "anova_p_cognitive",
+                "min_anova_p",
+                "max_anova_f",
+                "significant_any_dim",
             ]
         )
 
-    metrics_df = metrics_df.sort_values("avg_correlation", ascending=False)
+    metrics_df = metrics_df.sort_values(["min_anova_p", "max_anova_f"], ascending=[True, False])
     return metrics_df
 
 
@@ -483,19 +538,10 @@ def save_scatter_plots(
     cfg: RunConfig,
     output_dir: Path,
 ) -> List[str]:
-    human_long = pd.concat(
-        [
-            human_df[["product_id", "physical_score"]]
-            .rename(columns={"physical_score": "score"})
-            .assign(dimension="physical"),
-            human_df[["product_id", "cognitive_score"]]
-            .rename(columns={"cognitive_score": "score"})
-            .assign(dimension="cognitive"),
-        ],
-        ignore_index=True,
-    )
-    human_long["score"] = pd.to_numeric(human_long["score"], errors="coerce")
-    human_avg = human_long.groupby(["product_id", "dimension"], as_index=False)["score"].mean()
+    def safe_name(value: str) -> str:
+        return re.sub(r"[^A-Za-z0-9_.-]+", "_", value)
+
+    _ = human_df
 
     generated_files: List[str] = []
     for prompt_name, prompt_rows in llm_agg_df.groupby("prompt_name"):
@@ -505,28 +551,29 @@ def save_scatter_plots(
 
         plotted = False
         for idx, dim in enumerate(cfg.dimensions):
-            dim_llm = prompt_rows[prompt_rows["dimension"] == dim][["product_id", "llm_score"]]
-            dim_human = human_avg[human_avg["dimension"] == dim][["product_id", "score"]]
-            merged = dim_llm.merge(dim_human, on="product_id", how="inner")
+            dim_llm = prompt_rows[prompt_rows["dimension"] == dim][["model_name", "llm_score"]].copy()
+            dim_llm["llm_score"] = pd.to_numeric(dim_llm["llm_score"], errors="coerce")
+            dim_llm = dim_llm.dropna(subset=["llm_score"])
 
             ax = axes[idx]
-            if merged.empty:
+            if dim_llm.empty:
                 ax.set_title(f"{dim}: no overlap")
-                ax.set_xlabel("Human avg score")
+                ax.set_xlabel("Model")
                 ax.set_ylabel("LLM score")
                 continue
 
             plotted = True
-            sns.regplot(data=merged, x="score", y="llm_score", ax=ax, scatter_kws={"s": 50})
-            ax.set_title(f"{prompt_name} - {dim}")
-            ax.set_xlabel("Human avg score")
+            sns.boxplot(data=dim_llm, x="model_name", y="llm_score", ax=ax)
+            sns.stripplot(data=dim_llm, x="model_name", y="llm_score", ax=ax, color="black", alpha=0.5)
+            ax.set_title(f"{prompt_name} | {dim}")
+            ax.set_xlabel("Model")
             ax.set_ylabel("LLM score")
-            ax.set_xlim(1, 5)
-            ax.set_ylim(1, 5)
+            ax.set_ylim(1, 7)
+            ax.tick_params(axis="x", rotation=20)
 
         if plotted:
             fig.tight_layout()
-            out_path = output_dir / f"scatter_{prompt_name}.png"
+            out_path = output_dir / f"anova_groups_{safe_name(prompt_name)}.png"
             fig.savefig(out_path, dpi=150)
             generated_files.append(str(out_path))
         plt.close(fig)
@@ -550,32 +597,45 @@ def write_summary_report(
     lines = [
         "# Summary Report",
         "",
-        "## Top Prompt Recommendation",
-        f"- Name: **{top_prompt['prompt_name']}**",
-        f"- Avg correlation: **{top_prompt.get('avg_correlation', float('nan')):.3f}**",
-        f"- Kappa (LLM+human): **{top_prompt.get('kappa', float('nan')):.3f}**",
+        "## Strongest Between-Model Difference",
+        f"- Prompt: **{top_prompt['prompt_name']}**",
+        f"- Minimum ANOVA p-value across dimensions: **{top_prompt.get('min_anova_p', float('nan')):.6f}**",
+        f"- Maximum ANOVA F-statistic across dimensions: **{top_prompt.get('max_anova_f', float('nan')):.3f}**",
         "",
-        "## Prompt Ranking (by avg correlation)",
+        "## Ranking (by min ANOVA p-value)",
         "",
     ]
 
-    show_cols = [c for c in ["prompt_name", "corr_physical", "corr_cognitive", "kappa", "avg_correlation", "low_agreement_flag"] if c in metrics_df.columns]
+    show_cols = [
+        c
+        for c in [
+            "prompt_name",
+            "anova_f_physical",
+            "anova_p_physical",
+            "anova_f_cognitive",
+            "anova_p_cognitive",
+            "min_anova_p",
+            "max_anova_f",
+            "significant_any_dim",
+        ]
+        if c in metrics_df.columns
+    ]
     lines.append(metrics_df[show_cols].to_markdown(index=False))
 
     if plot_paths:
-        lines.extend(["", "## Scatter Plots"]) 
+        lines.extend(["", "## Group Comparison Plots"]) 
         for p in plot_paths:
             rel = Path(p).name
             lines.append(f"- ![{rel}]({rel})")
 
-    low_agreement = metrics_df[metrics_df["low_agreement_flag"] == True]
-    lines.extend(["", "## Validation Flags"])
-    if low_agreement.empty:
-        lines.append("- No prompts fell below the 0.4 average-correlation threshold.")
+    significant = metrics_df[metrics_df["significant_any_dim"] == True]
+    lines.extend(["", "## Significance Flags"])
+    if significant.empty:
+        lines.append("- No prompts showed significant between-model differences at p < 0.05.")
     else:
-        for _, row in low_agreement.iterrows():
+        for _, row in significant.iterrows():
             lines.append(
-                f"- {row['prompt_name']} flagged (avg correlation={row['avg_correlation']:.3f})"
+                f"- {row['prompt_name']} shows significant between-model differences (min p={row['min_anova_p']:.6f})"
             )
 
     summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -626,7 +686,18 @@ def main() -> None:
 
     llm_agg_df, llm_raw_df = run_prompt_runner(products_df, prompts, cfg, logger)
 
-    llm_output = llm_agg_df[["prompt_name", "product_id", "dimension", "llm_score", "reason"]]
+    llm_output = llm_agg_df[
+        [
+            "model_name",
+            "provider",
+            "model_id",
+            "prompt_name",
+            "product_id",
+            "dimension",
+            "llm_score",
+            "reason",
+        ]
+    ]
     llm_output.to_csv(output_dir / "llm_ratings.csv", index=False)
 
     metrics_df = compute_metrics(llm_agg_df, llm_raw_df, human_df, cfg)

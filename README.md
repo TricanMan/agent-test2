@@ -4,8 +4,8 @@ This workspace provides a minimum viable pipeline to evaluate prompt variants ag
 
 ## What It Produces
 
-- `outputs/llm_ratings.csv`: LLM scores and reasons by prompt/product/dimension
-- `outputs/metrics_table.csv`: Prompt-level correlations, rank correlations, accuracy, and kappa
+- `outputs/llm_ratings.csv`: LLM scores and reasons by model/provider/prompt/product/dimension
+- `outputs/metrics_table.csv`: Model+prompt correlations, rank correlations, accuracy, and kappa
 - `outputs/summary_report.md`: Ranked summary with validation flags and scatter plots
 - `outputs/logs.json`: Warnings, errors, token usage, and estimated API cost
 
@@ -28,7 +28,11 @@ This workspace provides a minimum viable pipeline to evaluate prompt variants ag
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-echo 'OPENAI_API_KEY="your_api_key"' > .env
+cat << 'EOF' > .env
+OPENAI_API_KEY="your_openai_key"
+GOOGLE_API_KEY="your_google_key"
+ANTHROPIC_API_KEY="your_anthropic_key"
+EOF
 ```
 
 ## Run
@@ -45,6 +49,7 @@ python mvp.py --products sample/products.csv --human sample/human_ratings.csv --
 
 ## Notes
 
+- The runner uses LiteLLM as a unified gateway across providers.
 - Retries are enabled for LLM calls (`retry_attempts` in config).
 - Invalid JSON or out-of-range model scores are logged and skipped.
 - Low-agreement prompts are flagged when avg correlation < 0.4.

@@ -1,9 +1,13 @@
 {
-  "llm_model": "gpt-4o",
-  "judge_repeats": 3,
-  "dimensions": ["physical", "cognitive"],
-  "max_workers": 8,
-  "request_timeout": 60,
-  "retry_attempts": 3,
-  "retry_backoff_seconds": 2
+"models": [
+{ "name": "openai_gpt5", "provider": "openai", "model": "gpt-5" },
+{ "name": "gemini_31_pro", "provider": "gemini", "model": "gemini-3.1-pro" },
+{ "name": "claude_46_opus", "provider": "anthropic", "model": "claude-opus-4-6" }
+],
+"judge_repeats": 3,
+"dimensions": ["physical", "cognitive"],
+"max_workers": 8,
+"request_timeout": 60,
+"retry_attempts": 3,
+"retry_backoff_seconds": 2
 }
