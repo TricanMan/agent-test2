@@ -1,0 +1,9 @@
+{
+  "llm_model": "gpt-4o",
+  "judge_repeats": 3,
+  "dimensions": ["physical", "cognitive"],
+  "max_workers": 8,
+  "request_timeout": 60,
+  "retry_attempts": 3,
+  "retry_backoff_seconds": 2
+}

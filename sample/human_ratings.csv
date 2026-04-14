@@ -1,0 +1,10 @@
+product_id,rater_id,physical_score,cognitive_score,reason
+1,r1,3,2,"No physical buttons; easy daily use once configured"
+1,r2,2,2,"Touch interaction limited, setup through app is involved"
+1,r3,3,3,"Moderate install effort and moderate understanding required"
+2,r1,4,3,"Physical switch fallback helps, but automation setup is complex"
+2,r2,4,4,"Bridge setup and app routines add cognitive load"
+2,r3,3,3,"Mostly manageable with occasional setup friction"
+3,r1,3,3,"Mechanical install is manageable but not trivial"
+3,r2,2,3,"Tool use and alignment can be physically challenging"
+3,r3,3,4,"Permissions, passcodes, and auto-lock settings are cognitively heavy"

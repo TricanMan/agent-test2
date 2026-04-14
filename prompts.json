@@ -1,0 +1,6 @@
+[
+  {
+    "name": "base_cot",
+    "template": "You are evaluating smart home product accessibility on the {dimension} dimension.\\n\\nProduct name: {product_name}\\nCategory: {category}\\nDescription: {product_desc}\\n\\nReturn only JSON with keys: score (integer 1-5), reason (string). Think step-by-step privately before outputting JSON."
+  }
+]

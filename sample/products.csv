@@ -1,0 +1,4 @@
+product_id,product_name,description,category
+1,Nest Thermostat,"Voice and app control with minimal tactile controls. Requires account setup, Wi-Fi pairing, and app navigation for advanced settings. Installation can involve wiring and compatibility checks.",Climate
+2,Philips Hue Starter Kit,"Mobile app onboarding and voice assistant support. Physical switches still work, but scene setup and automation require app logic and account linking. Bridge setup adds extra cognitive steps.",Lighting
+3,August Smart Lock,"Keypad and app access with temporary passcodes for guests. Installation is moderate and may need screwdriver use. Notifications and auto-lock options increase setup complexity.",Security
