@@ -38,7 +38,7 @@ EOF
 ## Run
 
 ```bash
-python mvp.py --products sample/products.csv --human sample/human_ratings.csv --prompts prompts.json
+python mvp.py --products sample/products.csv --prompts prompts.json
 ```
 
 Optional:
@@ -54,3 +54,4 @@ python mvp.py --products sample/products.csv --human sample/human_ratings.csv --
 - Invalid JSON or out-of-range model scores are logged and skipped.
 - Low-agreement prompts are flagged when avg correlation < 0.4.
 - Kappa uses a generalized Fleiss-style formulation over rating count matrices.
+- Currently, human rating comparison is non-functional. There for future compatibility.

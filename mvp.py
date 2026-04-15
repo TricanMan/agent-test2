@@ -84,7 +84,7 @@ def parse_args() -> argparse.Namespace:
         description="MVP prompt-evaluation pipeline for LLM-as-judge testing"
     )
     parser.add_argument("--products", required=True, help="Path to products CSV")
-    parser.add_argument("--human", required=True, help="Path to human ratings CSV")
+    parser.add_argument("--human", default=None, help="Path to human ratings CSV")
     parser.add_argument("--prompts", required=True, help="Path to prompt variants JSON")
     parser.add_argument(
         "--config", default="config.json", help="Path to config JSON (default: config.json)"
@@ -674,11 +674,13 @@ def main() -> None:
     cfg = load_config(args.config)
 
     products_df = pd.read_csv(args.products)
-    human_df = pd.read_csv(args.human)
+    human_df: Optional[pd.DataFrame] = None
+    if args.human:
+        human_df = pd.read_csv(args.human)
+        human_df = validate_human(human_df)
     prompts = load_json(args.prompts)
 
     products_df = validate_products(products_df)
-    human_df = validate_human(human_df)
     products_df = ensure_product_id(products_df, logger)
 
     output_dir = Path(args.output_dir)
