@@ -1,0 +1,3 @@
+prompt_name,model_groups_physical,n_obs_physical,anova_f_physical,anova_p_physical,model_groups_cognitive,n_obs_cognitive,anova_f_cognitive,anova_p_cognitive,min_anova_p,max_anova_f,significant_any_dim
+up_cot,2,6,1.0000000000000004,0.3739009663000589,2,6,64.0000000000001,0.0013238969092171638,0.0013238969092171638,64.0000000000001,True
+base_cot,2,6,2.7000000000000006,0.17569310863092152,2,6,0.0,1.0,0.17569310863092152,2.7000000000000006,False

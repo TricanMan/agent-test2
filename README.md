@@ -35,6 +35,12 @@ ANTHROPIC_API_KEY="your_anthropic_key"
 EOF
 ```
 
+For the transformer script fallback path:
+
+```bash
+export GROQ_API_KEY="your_groq_key"
+```
+
 ## Run
 
 ```bash
@@ -46,6 +52,25 @@ Optional:
 ```bash
 python mvp.py --products sample/products.csv --human sample/human_ratings.csv --prompts prompts.json --config config.json --output-dir outputs
 ```
+
+## Transform Raw CSV To MVP Products CSV
+
+If your source CSV has columns `name,product_url,manual_url`, run:
+
+```bash
+python transform_products.py --input input.csv --output output.csv --config transform_config.json
+```
+
+The script writes:
+
+- `output.csv` with columns `product_name,description,category`
+- `outputs/transform_log.json` with per-row status/errors
+
+Tips:
+
+- Ollama is used as primary extractor (`ollama_model` in `transform_config.json`).
+- Groq is used automatically as fallback if Ollama fails.
+- Start with a 5-row sample and use `--verbose` for debugging.
 
 ## Notes
 

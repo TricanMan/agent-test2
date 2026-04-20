@@ -1,0 +1,22 @@
+{
+  "warnings": [
+    {
+      "type": "missing_provider_api_key",
+      "model_name": "gemini_31_pro",
+      "provider": "gemini",
+      "model": "gemini-3.1-pro",
+      "required_env_var": "GOOGLE_API_KEY",
+      "message": "Skipped model because GOOGLE_API_KEY is not set."
+    }
+  ],
+  "errors": [],
+  "usage": {
+    "input_tokens": 23955,
+    "output_tokens": 47459,
+    "estimated_cost_usd": 0.83166,
+    "pricing": {
+      "input_cost_per_1m_tokens": 5.0,
+      "output_cost_per_1m_tokens": 15.0
+    }
+  }
+}

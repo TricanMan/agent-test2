@@ -1,0 +1,374 @@
+{
+  "summary": {
+    "processed": 50,
+    "succeeded": 47,
+    "failed": 3,
+    "fallback_to_groq": 3,
+    "scrape_failures": 22
+  },
+  "rows": [
+    {
+      "status": "ok",
+      "name": "SecuLife Guardian SOS Wristband with Fall Detection for Seniors"
+    },
+    {
+      "status": "ok",
+      "name": "Lively Mobile2 - Medical Alert Device"
+    },
+    {
+      "status": "warning",
+      "name": "NestHao Bed Sensor Alarm",
+      "url": "https://manuals.plus/asin/B096WBQWBX",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B096WBQWBX"
+    },
+    {
+      "status": "ok",
+      "name": "NestHao Bed Sensor Alarm"
+    },
+    {
+      "status": "ok",
+      "name": "MGMini Lite"
+    },
+    {
+      "status": "warning",
+      "name": "Smart Caregiver Fall Prevention Monitor",
+      "url": "https://manuals.plus/asin/B01FRGTR4Q",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B01FRGTR4Q"
+    },
+    {
+      "status": "ok",
+      "name": "Smart Caregiver Fall Prevention Monitor"
+    },
+    {
+      "status": "failed",
+      "name": "Smart Med Cellular Medical Alert Necklace",
+      "error": "llm_extraction_failed",
+      "ollama_error": "Expecting ':' delimiter: line 10 column 21 (char 485)",
+      "groq_error": "GROQ_API_KEY is not set"
+    },
+    {
+      "status": "ok",
+      "name": "Aqara Presence Sensor FP2"
+    },
+    {
+      "status": "failed",
+      "name": "Smart Med Cellular Medical Alert Smart Watch",
+      "error": "llm_extraction_failed",
+      "ollama_error": "Expecting ':' delimiter: line 9 column 17 (char 365)",
+      "groq_error": "GROQ_API_KEY is not set"
+    },
+    {
+      "status": "ok",
+      "name": "ADT Health"
+    },
+    {
+      "status": "ok",
+      "name": "Sentinare Fall Detection & Activity Sensor"
+    },
+    {
+      "status": "ok",
+      "name": "Nomo Smart Care Medical Alert System"
+    },
+    {
+      "status": "ok",
+      "name": "CallToU Wireless Caregiver Pager Smart Call System CC01"
+    },
+    {
+      "status": "ok",
+      "name": "Bay Alarm Medical SOS Micro"
+    },
+    {
+      "status": "ok",
+      "name": "Guardian Alert 911 Plus"
+    },
+    {
+      "status": "warning",
+      "name": "Fajocru Fall Detection Smart Watch for Seniors",
+      "url": "https://manuals.plus/asin/B0FD7BY51Z",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B0FD7BY51Z"
+    },
+    {
+      "status": "ok",
+      "name": "Fajocru Fall Detection Smart Watch for Seniors"
+    },
+    {
+      "status": "ok",
+      "name": "Pull String Alarm"
+    },
+    {
+      "status": "ok",
+      "name": "SYNLETT Bed Alarm Caregiver Pager"
+    },
+    {
+      "status": "failed",
+      "name": "Eufy Motion Sensor",
+      "error": "llm_extraction_failed",
+      "ollama_error": "No JSON object detected in LLM output",
+      "groq_error": "GROQ_API_KEY is not set"
+    },
+    {
+      "status": "warning",
+      "name": "NORJAN 4-in-1 Natural Gas & Carbon Monoxide Detector",
+      "url": "https://manuals.plus/asin/B0DLSZZLWL",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B0DLSZZLWL"
+    },
+    {
+      "status": "ok",
+      "name": "NORJAN 4-in-1 Natural Gas & Carbon Monoxide Detector"
+    },
+    {
+      "status": "warning",
+      "name": "Vilfet 5-in-1 Carbon Monoxide and Natural Gas Detector",
+      "url": "https://manuals.plus/asin/B0F4X6TFT9",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B0F4X6TFT9"
+    },
+    {
+      "status": "ok",
+      "name": "Vilfet 5-in-1 Carbon Monoxide and Natural Gas Detector"
+    },
+    {
+      "status": "warning",
+      "name": "Firlarm Gas Leak Detector YC-805",
+      "url": "https://manuals.plus/asin/B0FDK9F3RM",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B0FDK9F3RM"
+    },
+    {
+      "status": "ok",
+      "name": "Firlarm Gas Leak Detector YC-805"
+    },
+    {
+      "status": "ok",
+      "name": "Kidde Carbon Monoxide Detector, Propane, Natural, Methane, & Explosive Gas Alarm"
+    },
+    {
+      "status": "warning",
+      "name": "KOABBIT KH156 4-in-1 Plug-in Gas and Carbon Monoxide Detecto",
+      "url": "https://manuals.plus/asin/B0D9FFZ6YD",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B0D9FFZ6YD"
+    },
+    {
+      "status": "ok",
+      "name": "KOABBIT KH156 4-in-1 Plug-in Gas and Carbon Monoxide Detecto"
+    },
+    {
+      "status": "ok",
+      "name": "Smart Wifi Motion Sensor"
+    },
+    {
+      "status": "ok",
+      "name": "Eve Motion Sensor"
+    },
+    {
+      "status": "warning",
+      "name": "Centralite Micro-Motion SEnsor",
+      "url": "https://manuals.plus/centralite/centralite-3328-c-micro-motion-sensor-home-automation-user-guide",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/centralite/centralite-3328-c-micro-motion-sensor-home-automation-user-guide"
+    },
+    {
+      "status": "ok",
+      "name": "Centralite Micro-Motion SEnsor"
+    },
+    {
+      "status": "warning",
+      "name": "TOPTES PT199 Natural Gas Leak Detector",
+      "url": "https://manuals.plus/asin/B0B62LBZPC",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B0B62LBZPC"
+    },
+    {
+      "status": "ok",
+      "name": "TOPTES PT199 Natural Gas Leak Detector"
+    },
+    {
+      "status": "warning",
+      "name": "Haozee Motion Sensor",
+      "url": "https://manuals.plus/asin/B0F8QVLWGJ",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B0F8QVLWGJ"
+    },
+    {
+      "status": "ok",
+      "name": "Haozee Motion Sensor"
+    },
+    {
+      "status": "warning",
+      "name": "Caseta Motion Sensor",
+      "url": "https://www.prolighting.com/pd-osens-wh.html?utm_source=bing_shopping&utm_medium=cpc&utm_campaign=PMax%3A%20Lutron%20-%20Top%20Groups%20%26%20SKUs&utm_term=2330552334531357&utm_content=AssetGroup_041825_152204",
+      "stage": "product_scrape",
+      "error": "403 Client Error: Forbidden for url: https://www.prolighting.com/pd-osens-wh.html?utm_source=bing_shopping&utm_medium=cpc&utm_campaign=PMax%3A%20Lutron%20-%20Top%20Groups%20%26%20SKUs&utm_term=2330552334531357&utm_content=AssetGroup_041825_152204"
+    },
+    {
+      "status": "warning",
+      "name": "Caseta Motion Sensor",
+      "url": "https://www.prolighting.com/specsheets/3691125_ENG.pdf",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://www.prolighting.com/specsheets/3691125_ENG.pdf"
+    },
+    {
+      "status": "ok",
+      "name": "Caseta Motion Sensor"
+    },
+    {
+      "status": "ok",
+      "name": "Tuya Motion Sensor"
+    },
+    {
+      "status": "ok",
+      "name": "Tapo D210 TD21"
+    },
+    {
+      "status": "warning",
+      "name": "Orbitell M50",
+      "url": "https://manuals.plus/asin/B0DJXK13T2",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B0DJXK13T2"
+    },
+    {
+      "status": "ok",
+      "name": "Orbitell M50"
+    },
+    {
+      "status": "ok",
+      "name": "Ring Doorbell (1st generation)"
+    },
+    {
+      "status": "ok",
+      "name": "Arlo Video Doorbell (2nd generation)"
+    },
+    {
+      "status": "warning",
+      "name": "WISDOM VIEW WV-001 Smart Video Doorbell",
+      "url": "https://manuals.plus/asin/B0FDG2LPZG",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B0FDG2LPZG"
+    },
+    {
+      "status": "ok",
+      "name": "WISDOM VIEW WV-001 Smart Video Doorbell"
+    },
+    {
+      "status": "ok",
+      "name": "KASA KD110 Smart Doorbell"
+    },
+    {
+      "status": "ok",
+      "name": "Live Fine Automatic Pill Dispenser"
+    },
+    {
+      "status": "warning",
+      "name": "COLORWING Smart Pill Dispenser",
+      "url": "https://manuals.plus/asin/B0DX24MRHB",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B0DX24MRHB"
+    },
+    {
+      "status": "ok",
+      "name": "COLORWING Smart Pill Dispenser"
+    },
+    {
+      "status": "warning",
+      "name": "KLIM Smart Pill Dispenser with Alarm KPDW1",
+      "url": "https://manuals.plus/asin/B0CYZF1LLQ",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B0CYZF1LLQ"
+    },
+    {
+      "status": "ok",
+      "name": "KLIM Smart Pill Dispenser with Alarm KPDW1"
+    },
+    {
+      "status": "warning",
+      "name": "Windtrace Automatic Pill Dispenser A-1281D",
+      "url": "https://manuals.plus/asin/B0D8S8V2QP",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B0D8S8V2QP"
+    },
+    {
+      "status": "ok",
+      "name": "Windtrace Automatic Pill Dispenser A-1281D"
+    },
+    {
+      "status": "warning",
+      "name": "Stechro Smart Water Leak Detector",
+      "url": "https://manuals.plus/asin/B0DPMCSB5B",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/asin/B0DPMCSB5B"
+    },
+    {
+      "status": "ok",
+      "name": "Stechro Smart Water Leak Detector"
+    },
+    {
+      "status": "ok",
+      "name": "GoveeLife Water Leak Detector 2"
+    },
+    {
+      "status": "warning",
+      "name": "Geevon 2 Pack Water Leak Detectors",
+      "url": "https://device.report/manual/10616657",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://device.report/manual/10616657"
+    },
+    {
+      "status": "ok",
+      "name": "Geevon 2 Pack Water Leak Detectors"
+    },
+    {
+      "status": "ok",
+      "name": "YoLink Water Leak Starter Kit"
+    },
+    {
+      "status": "ok",
+      "name": "X-Sense Wi-Fi Water Leak Detector Kit"
+    },
+    {
+      "status": "ok",
+      "name": "Moen Flo"
+    },
+    {
+      "status": "warning",
+      "name": "MCGOR Motion Sensor Cabinet Light",
+      "url": "https://manuals.plus/mcgor/mcgor-gls-c010-40-led-rechargeable-under-cabinet-lights-user-manual",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/mcgor/mcgor-gls-c010-40-led-rechargeable-under-cabinet-lights-user-manual"
+    },
+    {
+      "status": "ok",
+      "name": "MCGOR Motion Sensor Cabinet Light"
+    },
+    {
+      "status": "warning",
+      "name": "Electight Motion Sensor Smart Lights",
+      "url": "https://manuals.plus/electight/electight-hml9-3p-16-leds-under-cabinet-lights-user-manual",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/electight/electight-hml9-3p-16-leds-under-cabinet-lights-user-manual"
+    },
+    {
+      "status": "ok",
+      "name": "Electight Motion Sensor Smart Lights"
+    },
+    {
+      "status": "warning",
+      "name": "Rihvy Under Cabinet Lights",
+      "url": "https://manuals.plus/rihvy/rihvy-8-inch-rechargeable-motion-sensor-light-user-guide",
+      "stage": "manual_scrape",
+      "error": "403 Client Error: Forbidden for url: https://manuals.plus/rihvy/rihvy-8-inch-rechargeable-motion-sensor-light-user-guide"
+    },
+    {
+      "status": "ok",
+      "name": "Rihvy Under Cabinet Lights"
+    },
+    {
+      "status": "ok",
+      "name": "esenlite Flush Mount Ceiling Light Motion Activated"
+    }
+  ]
+}

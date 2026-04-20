@@ -1,7 +1,7 @@
 {
 "models": [
 { "name": "openai_gpt5", "provider": "openai", "model": "gpt-5" },
-{ "name": "gemini_31_pro", "provider": "gemini", "model": "gemini-3.1-pro" },
+{ "name": "gemini_31_pro", "provider": "gemini", "model": "gemini-3.1-pro-preview" },
 { "name": "claude_46_opus", "provider": "anthropic", "model": "claude-opus-4-6" }
 ],
 "judge_repeats": 3,
